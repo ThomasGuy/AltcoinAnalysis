@@ -1,0 +1,11 @@
+__pycache__
+*.pyc
+.idea
+.vscode
+
+#.ipynb_checkpoints
+#*.ipynb
+
+*.log
+
+temp
