@@ -3,10 +3,12 @@ import pkg_resources
 from pandas.tseries.offsets import Hour
 
 
-times ={'3h': [1, 4, 7, 10, 13, 16, 19, 22],
-        '6h': [1, 7, 13, 19],
-        '12h': [7, 19],
-        '1D': [7]}
+times = {
+    '3h': [1, 4, 7, 10, 13, 16, 19, 22],
+    '6h': [1, 7, 13, 19],
+    '12h': [7, 19],
+    '1D': [7]
+}
 
 
 def getData(sym, step):
@@ -15,7 +17,7 @@ def getData(sym, step):
 
 
 def _setMasterData(sym, step, dataf):
-    filepath = _masterDataPath(sym ,step)
+    filepath = _masterDataPath(sym, step)
     dataf.to_csv(filepath)
 
 
@@ -51,19 +53,23 @@ def fixTimeStamp(coins):
             if date.hour not in hours:
                 dataf.drop(date, inplace=True)
                 date = date + Hour()
-                offset_arr.append([date,row['open'],row['close'],row['high'],row['low'],row['volume']])
+                offset_arr.append([date, row['open'], row['close'],
+                                   row['high'], row['low'], row['volume']])
 
-        replacment = pd.DataFrame(offset_arr, columns=('MTS open close high low volume').split())
+        replacment = pd.DataFrame(offset_arr,
+                                  columns=('MTS open close high low volume')
+                                  .split())
         replacment.set_index('MTS', inplace=True)
         dataf = pd.concat([dataf, replacment])
         dataf.drop_duplicates()
-        grouped = dataf.groupby('MTS')['open', 'close', 'high', 'low', 'volume'].mean()
+        grouped = dataf.groupby('MTS')['open', 'close', 'high', 'low',
+                                       'volume'].mean()
         _setMasterData(sym, delta, grouped)
 
 
 def _test(data, interval):
     ts_arr = []
-    hours = times[interval] # hours need to be chosen for the interval being tested
+    hours = times[interval]  # hours need to be chosen for interval
     for date, row in data.iterrows():
         if date.hour not in hours:
             ts_arr.append(date)
@@ -81,7 +87,7 @@ def fix12hTimeStamp(coins):
         for date in arr:
             data.drop(date, inplace=True)
             if date.hour in [1, 13]:
-                date = date + 6*Hour()
+                date = date + 6 * Hour()
                 row = sixhourData.loc[date]
                 replace.append([date, row['open'], row['close'],
                                 row['high'], row['low'], row['volume']])
@@ -102,15 +108,18 @@ def fix_1D_TimeStamp(coins):
         for date in arr:
             row = data.loc[date]
             data.drop(date, axis=0, inplace=True)
-            date = date + ((7 - date.hour)*Hour())
-            replace.append([date, row['open'], row['close'],row['high'], row['low'], row['volume']])
-        DF = pd.DataFrame(replace, columns=('MTS open close high low volume').split())
+            date = date + ((7 - date.hour) * Hour())
+            replace.append([date, row['open'], row['close'], row['high'],
+                            row['low'], row['volume']])
+        DF = pd.DataFrame(replace,
+                          columns=('MTS open close high low volume').split())
         DF.set_index('MTS', inplace=True)
         finalDF = pd.concat([data, DF])
         finalDF.drop_duplicates()
-        grouped = finalDF.groupby('MTS')['open', 'close', 'high', 'low', 'volume'].mean()
+        grouped = finalDF.groupby('MTS')['open', 'close', 'high', 'low',
+                                         'volume'].mean()
         _setMasterData(sym, '1D', grouped)
 
 
 def showName():
-	print(__name__)
+    print(__name__)

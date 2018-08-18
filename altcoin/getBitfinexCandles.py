@@ -5,12 +5,14 @@ Created on Wed Mar  7 17:37:23 2018
 @author: Sporty
 """
 
-import pkg_resources, time, logging
+import pkg_resources
+import logging
 import pandas as pd
 import numpy as np
-import requests, json, time
+import requests
+import json
+import time
 from requests import Session
-from pandas import DataFrame
 from datetime import datetime
 from datetime import timedelta
 from .getData import getData
@@ -20,23 +22,25 @@ log = logging.getLogger(__name__)
 
 bitfinex = 'https://api.bitfinex.com/v2/candles/trade:'
 
-sym_usd = ['AIDUSD','AVTUSD','BATUSD','BCHUSD','BTCUSD','BTGUSD','DATUSD',
-           'DSHUSD','EDOUSD','ELFUSD','EOSUSD','ETCUSD','ETHUSD','ETPUSD',
-           'FUNUSD','GNTUSD','IOTUSD','LTCUSD','MNAUSD','NEOUSD','OMGUSD',
-           'QSHUSD','QTMUSD','RCNUSD','REPUSD','RLCUSD','RRTUSD','SANUSD',
-           'SNGUSD','SNTUSD','SPKUSD','TNBUSD','TRXUSD','XMRUSD','XRPUSD',
-           'YYWUSD','ZECUSD','ZRXUSD']
+sym_usd = ['AIDUSD', 'AVTUSD', 'BATUSD', 'BCHUSD', 'BTCUSD', 'BTGUSD',
+           'DATUSD', 'DSHUSD', 'EDOUSD', 'ELFUSD', 'EOSUSD', 'ETCUSD',
+           'ETHUSD', 'ETPUSD', 'FUNUSD', 'GNTUSD', 'IOTUSD', 'LTCUSD',
+           'MNAUSD', 'NEOUSD', 'OMGUSD', 'QSHUSD', 'QTMUSD', 'RCNUSD',
+           'REPUSD', 'RLCUSD', 'RRTUSD', 'SANUSD', 'SNGUSD', 'SNTUSD',
+           'SPKUSD', 'TNBUSD', 'TRXUSD', 'XMRUSD', 'XRPUSD', 'YYWUSD',
+           'ZECUSD', 'ZRXUSD']
 
-top_twenty5 = ['BCHUSD','BTCUSD','BTGUSD','DSHUSD','EOSUSD','ETCUSD','ETHUSD',
-               'IOTUSD','LTCUSD','NEOUSD','OMGUSD','QSHUSD','QTMUSD',
-               'TRXUSD','XMRUSD', 'XRPUSD','ZECUSD','GNTUSD','SANUSD','SPKUSD']
+top_twenty5 = ['BCHUSD', 'BTCUSD', 'BTGUSD', 'DSHUSD', 'EOSUSD', 'ETCUSD',
+               'ETHUSD', 'IOTUSD', 'LTCUSD', 'NEOUSD', 'OMGUSD', 'QSHUSD',
+               'QTMUSD', 'TRXUSD', 'XMRUSD', 'XRPUSD', 'ZECUSD', 'GNTUSD',
+               'SANUSD', 'SPKUSD']
 
-takeAway = ['AVTUSD','FUNUSD','RCNUSD','RLCUSD']
+takeAway = ['AVTUSD', 'FUNUSD', 'RCNUSD', 'RLCUSD']
 
-all_coins = ['BCHUSD', 'BTCUSD', 'BTGUSD', 'DSHUSD', 'EOSUSD', 'ETCUSD', 'ETHUSD',
-             'IOTUSD', 'LTCUSD', 'NEOUSD', 'OMGUSD', 'QSHUSD', 'QTMUSD',
-             'TRXUSD', 'XMRUSD', 'XRPUSD', 'ZECUSD', 'GNTUSD', 'SANUSD', 'SPKUSD',
-             'AVTUSD', 'FUNUSD', 'RCNUSD', 'RLCUSD']
+all_coins = ['BCHUSD', 'BTCUSD', 'BTGUSD', 'DSHUSD', 'EOSUSD', 'ETCUSD',
+             'ETHUSD', 'IOTUSD', 'LTCUSD', 'NEOUSD', 'OMGUSD', 'QSHUSD',
+             'QTMUSD', 'TRXUSD', 'XMRUSD', 'XRPUSD', 'ZECUSD', 'GNTUSD',
+             'SANUSD', 'SPKUSD', 'AVTUSD', 'FUNUSD', 'RCNUSD', 'RLCUSD']
 
 
 intervals = ['1h', '3h', '6h', '12h', '1D']
@@ -91,10 +95,10 @@ def _getCandlesBFX_2(coins, delta, limit):
     resp = Return_API_response()
     for coin in coins:
         data = resp.api_response(bitfinex + '{0}:t{1}/hist?limit={2}'.
-                                format(delta, coin, limit))
+                                 format(delta, coin, limit))
         if data:
             df = pd.DataFrame(data=data, columns=(
-                'MTS open close high low volume').split())
+                              'MTS open close high low volume').split())
             df.set_index('MTS', drop=True, inplace=True)
             df.index = pd.to_datetime(df.index, unit='ms')
             df.name = coin[:3]
@@ -110,7 +114,10 @@ def _latest(coins, interval, limit):
     for delta in interval:
         candles = _getCandlesBFX_2(coins, delta, limit)
         for candle in candles:
-            path = 'Data\\{0}\\{1}_Candles_{2}.csv'.format(delta, candles[candle].name[:3], delta)
+            path = 'Data\\{0}\\{1}_Candles_{2}.csv'.format(
+                delta,
+                candles[candle].name[:3],
+                delta)
             filepath = pkg_resources.resource_filename(__name__, path)
             # store data descending earliest at top/begining
             candles[candle][::-1].to_csv(filepath)
@@ -125,14 +132,18 @@ def _update(coins, interval, sort=False):
             masterPath = 'Data\\MasterData\\{}'.format(path)
             backupPath = 'Data\\Master_old\\{}'.format(path)
             old = getData(sym[:3], delta)
-            new = pd.read_csv(pkg_resources.resource_filename(__name__, newDataPath),
-                              index_col='MTS', parse_dates=True)
+            new = pd.read_csv(pkg_resources.resource_filename(
+                              __name__, newDataPath),
+                              index_col='MTS',
+                              parse_dates=True)
             update = pd.concat([old, new]).drop_duplicates()
-            master = update.groupby('MTS')['open', 'close', 'high', 'low', 'volume'].mean()
+            master = update.groupby('MTS')['open', 'close', 'high', 'low',
+                                           'volume'].mean()
             if sort:
                 master.sort_index()
             old.to_csv(pkg_resources.resource_filename(__name__, backupPath))
-            master.to_csv(pkg_resources.resource_filename(__name__, masterPath))
+            master.to_csv(pkg_resources.resource_filename(__name__,
+                                                          masterPath))
 
 
 # Only need to use this once to bring some new coins from Bitfinex
@@ -144,10 +155,14 @@ def _newCoins(coins=takeAway, interval=intervals, limit=1000):
             newDataPath = 'Data\\{}'.format(path)
             masterPath = 'Data\\MasterData\\{}'.format(path)
             oldPath = 'Data\\Master_old\\{}'.format(path)
-            master = pd.read_csv(pkg_resources.resource_filename(__name__, newDataPath),
-                              index_col='MTS', parse_dates=True)
-            master.to_csv(pkg_resources.resource_filename(__name__, masterPath))
-            master.to_csv(pkg_resources.resource_filename(__name__, oldPath))
+            master = pd.read_csv(pkg_resources.resource_filename(
+                                 __name__, newDataPath),
+                                 index_col='MTS',
+                                 parse_dates=True)
+            master.to_csv(pkg_resources.resource_filename(__name__,
+                                                          masterPath))
+            master.to_csv(pkg_resources.resource_filename(__name__,
+                                                          oldPath))
 
 
 # Update coin MasterData
@@ -167,14 +182,17 @@ def getOneBITFINEX(sym, step):
     return candles[candle][::-1]
 
 
-
 def updateAll(coins=all_coins):
     for delta in intervals:
         coin = 'BTCUSD'
-        path = 'Data\\MasterData\\{0}\\{1}_Candles_{2}.csv'.format(delta, coin[:3], delta)
+        path = 'Data\\MasterData\\{0}\\{1}_Candles_{2}.csv'.format(delta,
+                                                                   coin[:3],
+                                                                   delta)
         test = pd.read_csv(pkg_resources.resource_filename(__name__, path),
-                     index_col='MTS', parse_dates=True)
-        limit = int((datetime.utcnow() - test.index[-1]).total_seconds()/intervalsInSecounds[delta])
+                           index_col='MTS',
+                           parse_dates=True)
+        limit = int((datetime.utcnow() - test.index[-1]).
+                    total_seconds() / intervalsInSecounds[delta])
         print(f'limit for {delta} = {limit}')
         if limit > 0 and limit <= 1000:
             nextUpdate(coins, delta, limit)

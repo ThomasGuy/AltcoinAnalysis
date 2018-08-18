@@ -8,10 +8,13 @@ endpoint = 'https://min-api.cryptocompare.com/data/histoday'
 coinlist = 'https://min-api.cryptocompare.com/data/all/coinlist'
 
 
-top_thirty1 = ['BTC','ETH','XRP','BCH','EOS','ADA','LTC','XLM','TRX','NEO']
-top_thirty2 = ['MIOTA','XMR','DASH','XEM','VEN','USDT','ETC','QTUM','OMG','ICX']
-top_thirty3 = ['BNB', 'LSK', 'BTG', 'AE', 'NANO',
-               'ZEC', 'BTM', 'STEEN', 'XVG', 'BCN', 'ICX']
+top_thirty1 = ['BTC', 'ETH', 'XRP', 'BCH', 'EOS', 'ADA', 'LTC', 'XLM', 'TRX',
+               'NEO']
+top_thirty2 = ['MIOTA', 'XMR', 'DASH', 'XEM', 'VEN', 'USDT', 'ETC', 'QTUM',
+               'OMG', 'ICX']
+top_thirty3 = ['BNB', 'LSK', 'BTG', 'AE', 'NANO', 'ZEC', 'BTM', 'STEEN', 'XVG',
+               'BCN', 'ICX']
+
 
 def _getData(sym):
     res = requests.get(endpoint + '?fsym={}&tsym=USD&limit=2000'.format(sym))
@@ -26,4 +29,3 @@ def newCoins(coins):
         data = _getData(coin)
         path = 'cryptoData\\1D\\{}_Candles.csv'.format(coin)
         data.to_csv(pkg_resources.resource_filename(__name__, path))
-

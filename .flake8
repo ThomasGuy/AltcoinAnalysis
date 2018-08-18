@@ -1,0 +1,13 @@
+[flake8]
+ignore =
+    # import not at top of file
+    E402
+    # file imported but unused
+    F401
+    # contiuation line over indented
+    # E127
+exclude =
+    .git,
+    __pycache__,
+    timeMachine\server\static\css,
+max-complexity = 10
