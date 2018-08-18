@@ -52,7 +52,7 @@ def fixTimeStamp(coins):
                 dataf.drop(date, inplace=True)
                 date = date + Hour()
                 offset_arr.append([date,row['open'],row['close'],row['high'],row['low'],row['volume']])
-        
+
         replacment = pd.DataFrame(offset_arr, columns=('MTS open close high low volume').split())
         replacment.set_index('MTS', inplace=True)
         dataf = pd.concat([dataf, replacment])
@@ -111,3 +111,6 @@ def fix_1D_TimeStamp(coins):
         grouped = finalDF.groupby('MTS')['open', 'close', 'high', 'low', 'volume'].mean()
         _setMasterData(sym, '1D', grouped)
 
+
+def showName():
+	print(__name__)

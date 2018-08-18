@@ -36,8 +36,10 @@ def _initData(dataset, colName):
 
     # results are a series of lists which will later be DataFramed
     return (
-            [[dataset.index[0], dataset.iloc[0]['close'], 'Start', dollar, total]],
-            [[dataset.index[0], dataset.iloc[0]['close'], 'Start', stop_dollar, stop_total]]
+            [[dataset.index[0], dataset.iloc[0]['close'], 'Start',
+            dollar, total]],
+            [[dataset.index[0], dataset.iloc[0]['close'], 'Start',
+            stop_dollar, stop_total]]
             )
 
 
