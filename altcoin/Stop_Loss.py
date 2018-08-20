@@ -18,7 +18,7 @@ from .getData import getData
 
 def init(dataset, colName):
     record, stoploss = _initData(dataset, colName)
-    return _buySellStoploss(dataset, record, stoploss, colName)
+    return _buySellTrailingStop(dataset, record, stoploss, colName)
 
 
 def _initData(dataset, colName):
@@ -44,7 +44,7 @@ def _initData(dataset, colName):
     )
 
 
-def _buySellStoploss(dataset, record, stoploss, colName):
+def _buySellTrailingStop(dataset, record, stoploss, colName):
     sewma, bewma = colName
     STOP = False
     stopIt = 1.1  # 10% stop loss
