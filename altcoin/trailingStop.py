@@ -15,16 +15,19 @@ import matplotlib.pyplot as plt
 from .getBitfinexCandles import top_twenty5 as coins
 from .getData import getData
 
+# Initial investment
+investment = 1000
+
 
 def init(dataset, colName):
     record, stoploss = _initData(dataset, colName)
-    return _buySellTrailingStop(dataset, record, stoploss, colName)
+    return _trailingStop(dataset, record, stoploss, colName)
 
 
 def _initData(dataset, colName):
     # We start with $1000
-    dollar = 1000
-    stop_dollar = 1000
+    dollar = investment
+    stop_dollar = investment
     # The 'sma' is higher than the 'bma' ?
     if dataset.iloc[0][colName[0]] > dataset.iloc[0][colName[1]]:
         # start with coins
@@ -37,14 +40,12 @@ def _initData(dataset, colName):
 
     # results are a series of lists which will later be DataFramed
     return (
-        [[dataset.index[0], dataset.iloc[0]['close'], 'Start',
-            dollar, total]],
-        [[dataset.index[0], dataset.iloc[0]['close'], 'Start',
-            stop_dollar, stop_total]]
+        [[dataset.index[0], dataset.iloc[0]['close'], 'Start', dollar, total]],
+        [[dataset.index[0], dataset.iloc[0]['close'], 'Start', stop_dollar, stop_total]]
     )
 
 
-def _buySellTrailingStop(dataset, record, stoploss, colName):
+def _trailingStop(dataset, record, stoploss, colName):
     sewma, bewma = colName
     STOP = False
     stopIt = 1.1  # 10% stop loss
@@ -112,12 +113,8 @@ def _buySellTrailingStop(dataset, record, stoploss, colName):
                 Higher = not Higher
                 high = row['close']
 
-    price = pd.DataFrame(record,
-                         columns=('Date Close Transaction Dollar Total')
-                         .split())
-    stop_price = pd.DataFrame(stoploss, columns=('Date', 'Close',
-                                                 'Transaction', 'Stop_Dollar',
-                                                 'Stop_Total'))
+    price = pd.DataFrame(record, columns=('Date Close Transaction Dollar Total').split())
+    stop_price = pd.DataFrame(stoploss, columns=('Date', 'Close', 'Transaction', 'Stop_Dollar', 'Stop_Total'))
     price.set_index('Date', drop=True, inplace=True)
     stop_price.set_index('Date', drop=True, inplace=True)
     return (price, stop_price)
@@ -145,22 +142,16 @@ def plotDataset(dataset, price, stop_price, text):
     axes.scatter(bought.index, bought['Close'], color='g', label='Sell', lw=3)
 
     # Plot the Stoploss sell & buy points
-    stop_sold = pd.DataFrame(stop_price[
-                             stop_price['Transaction'] == 'Stop_Sell'
-                             ]['Close']
-                             )
+    stop_sold = pd.DataFrame(stop_price[stop_price['Transaction'] == 'Stop_Sell']['Close'])
     axes.scatter(stop_sold.index, stop_sold['Close'], color='r',
                  label='Stop_Loss - Sell', lw=7, alpha=.4)
-    stop_bought = pd.DataFrame(stop_price[
-                               stop_price['Transaction'] == 'Stop_Buy'
-                               ]['Close']
-                               )
+    stop_bought = pd.DataFrame(stop_price[stop_price['Transaction'] == 'Stop_Buy']['Close'])
     axes.scatter(stop_bought.index, stop_bought['Close'], color='g',
                  label='Stop_Buy', lw=7, alpha=.4)
 
     profit = dollarTotal(dataset, price, 'Total')
     stop_profit = dollarTotal(dataset, stop_price, 'Stop_Total')
-    axes.set_title('{} {} at {} interval ewma={} ewma={} Dollars= {} Stop_= {}'
+    axes.set_title('{} {} at {} interval sewma={} bewma={} Dollars= {} Stop_= {}'
                    .format(title, sym, step, sma, bma, profit, stop_profit))
     axes.set_ylabel('closing pric')
     axes.set_xlabel('Date')
@@ -176,12 +167,11 @@ def plotDollars(dataset, price, stop_price, text):
     profit = dollarTotal(dataset, price, 'Total')
     stop_profit = dollarTotal(dataset, stop_price, 'Stop_Total')
     price['Dollar'].plot(label='sma/bma=${}'.format(profit), figsize=(16, 6),
-                         title='{} {} ewma:{} ewma:{} at {} intervals'.
+                         title='{} {} sewma:{} bewma:{} at {} intervals'.
                          format(sym, title, sma, bma, step), lw=2)
-    stop_price['Stop_Dollar'].plot(label='Stoploss=${}'.format(stop_profit),
-                                   lw=1)
-    dataset['Dollar Return'].plot(
-        label='HODL=${}'.format(int(dataset['Dollar Return'].iloc[-1])), lw=1)
+    stop_price['Stop_Dollar'].plot(label='Stoploss=${}'.format(stop_profit), lw=1)
+    dataset['Cumlative Return'] = dataset['Cumlative Return'] * investment
+    dataset['Cumlative Return'].plot(label='HODL=${}'.format(int(dataset['Cumlative Return'].iloc[-1])), lw=1)
     plt.grid(color='b', alpha=0.5, linestyle='--', linewidth=0.5)
     plt.grid(True)
     plt.legend()
@@ -218,16 +208,18 @@ def showDollar():
 
 
 def ewma_Plot(sym, step, sewma, bewma, start, end):
-    data = getData(sym, step)
+    data = getData(sym, step).loc[pd.to_datetime(start): pd.to_datetime(end)]
     text = (sym, step, sewma, bewma, 'Simple Plot')
     colName = ('sewma', 'bewma')
     data['sewma'] = data['close'].ewm(span=sewma).mean()
     data['bewma'] = data['close'].ewm(span=bewma).mean()
     data['longewma'] = data['close'].ewm(span=55).mean()
     data['returns'] = data['close'].pct_change(2)
-    dataset = data.loc[pd.to_datetime(start): pd.to_datetime(end)]
-    result, stop_result = init(dataset, colName)
-    plotDataset(dataset, result, stop_result, text)
-    plotDollars(dataset, result, stop_result, text)
+    data['ret'] = data['close'].pct_change(1)
+    # Add on HODL or cumlative return for just holding
+    data['Cumlative Return'] = (1 + data['ret']).cumprod()
+    result, stop_result = init(data, colName)
+    plotDataset(data, result, stop_result, text)
+    plotDollars(data, result, stop_result, text)
 
     return (result, stop_result)
