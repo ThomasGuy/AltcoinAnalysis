@@ -139,7 +139,7 @@ def plotDataset(dataset, price, stop_price, text):
     sold = pd.DataFrame(price[price['Transaction'] == 'Sell']['Close'])
     axes.scatter(sold.index, sold['Close'], color='r', label='Sell', lw=3)
     bought = pd.DataFrame(price[price['Transaction'] == 'Buy']['Close'])
-    axes.scatter(bought.index, bought['Close'], color='g', label='Sell', lw=3)
+    axes.scatter(bought.index, bought['Close'], color='g', label='Buy', lw=3)
 
     # Plot the Stoploss sell & buy points
     stop_sold = pd.DataFrame(stop_price[stop_price['Transaction'] == 'Stop_Sell']['Close'])
