@@ -12,7 +12,7 @@ sys.path.insert(0, package_dir)
 if os.path.isfile(package_dir + "/logs/altcoin.log"):
     os.remove(package_dir + "/logs/altcoin.log")
 
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
                     filename=package_dir + '/logs/altcoin.log',

@@ -1,7 +1,7 @@
 import json
-import requests
 import pandas as pd
 import pkg_resources
+import requests
 
 
 endpoint = 'https://min-api.cryptocompare.com/data/histoday'
