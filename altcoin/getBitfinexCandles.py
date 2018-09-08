@@ -185,9 +185,7 @@ def getOneBITFINEX(sym, step):
 def updateAll(coins=all_coins):
     for delta in intervals:
         coin = 'BTCUSD'
-        path = 'Data\\MasterData\\{0}\\{1}_Candles_{2}.csv'.format(delta,
-                                                                   coin[:3],
-                                                                   delta)
+        path = 'Data\\MasterData\\{0}\\{1}_Candles_{2}.csv'.format(delta, coin[:3], delta)
         test = pd.read_csv(pkg_resources.resource_filename(__name__, path),
                            index_col='MTS',
                            parse_dates=True)
