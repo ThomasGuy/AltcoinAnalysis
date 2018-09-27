@@ -9,8 +9,6 @@ from mpl_finance import candlestick_ohlc
 import numpy as np
 
 from .getData import getData
-
-
 # log = logging.getLogger(__name__)
 
 
@@ -28,7 +26,7 @@ class Portfolio(dict):
         # ax.autoscale_view()
         ax.set_title('Portfolio Volatillity')
         for coin in self.values():
-            df, cross = coin.getCoinData()
+            df = coin.getCoinData()[0]
             df['returns'] = df['close'].pct_change(1)
             df['returns'].plot(kind='kde', label=coin.name)
         plt.legend()
@@ -42,12 +40,11 @@ class Portfolio(dict):
         step = CoinData.params['step']
         for key, coin in self.items():
             sf = coin.get_data(key, step)['close'].loc[start:finish]
-            # use resample to make sure we have a complete dataset
+            # use resample to make sure we have a complete dataset ##
             DF = pd.DataFrame(sf).resample('6H', loffset='-5H').ffill()[1:].copy()
-
             df_portfolio[key] = DF
         return df_portfolio
-    
+
     def normed_return(self, start=None, finish=None):
         normed = self.portfolioDF(start, finish)
         for df in normed.values():
@@ -58,8 +55,8 @@ class Portfolio(dict):
         """
         Return A dataframe of portfolio stock closing price for risk optimization
         """
-        column =[]
-        data  = []
+        column = []
+        data = []
         for key, df in self.portfolioDF(start, finish).items():
             column.append(key)
             data.append(df)
@@ -67,12 +64,25 @@ class Portfolio(dict):
         stocks.columns = column
         return stocks
 
+    def price(self):
+        """ List current Portfolio values """
+        for coin in self.values():
+            print(f'{coin.name} = ${coin.value}')
+
+    def position(self):
+        """ Latest Buy/Sell condition"""
+        for coin, data in self.items():
+            cross = data.getCoinData()[1]
+            print('{} is on a  "{}"  since   {} UTC'
+                    .format(coin, cross['Transaction'][-1],
+                                 datetime.strftime(cross.index[-1], "%Y/%m/%d %H:%m")))
+
 
 class CoinData:
     """
-    Generate data frame, set big, small and long ewma's.
-    Set daily and cumlative returns, and add coin to Portfolio.
-    Check volatility and calculate risk
+    Used to set generate a portfolio of coins, coin data taken from 'Time Machine' DB
+    Class parameters can be set for the whole portfolio:- set big, small and long ewma's.
+    Plot Time Machine DB data and trends
     """
     portfolio = Portfolio()
     params = {
@@ -97,7 +107,7 @@ class CoinData:
         self.get_data = get_data
 
     def __str__(self):
-        return self.name.title() 
+        return self.name.title()
 
     def __repr__(self):
         return self.name
@@ -245,7 +255,7 @@ class CoinData:
         axes.grid(True)
         plt.legend()
         plt.show()
- 
+
     # def _begining(self, start, dataf):
     #     """
     #     NOTE start should be chosen at least a week after the whole
