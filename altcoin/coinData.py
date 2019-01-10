@@ -1,4 +1,4 @@
-import logging
+# import logging
 import warnings
 from datetime import timedelta, datetime
 
@@ -7,27 +7,83 @@ import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter, date2num, WeekdayLocator, DayLocator, MONDAY
 from mpl_finance import candlestick_ohlc
 import numpy as np
+from colorama import Fore
 
 from .getData import getData
 # log = logging.getLogger(__name__)
+
+altcoin = {
+    'avt': 'Aventus (AVT)',
+    'bab': 'Bitcoin Cash ABC (BAB)',
+    'bch': 'Bitcoin Cash (BCH)',
+    'btc': 'Bitcoin (BTC)',
+    'btg': 'Bitcoin Gold (BTG)',
+    'dsh': 'Dash (DSH)',
+    'etc': 'Ethereum Classic (ETC)',
+    'eth': 'Ethereum (ETH)',
+    'eos': 'Eosio (EOS)',
+    'fun': 'FunFair (FUN)',
+    'gnt': 'Golem (GNT)',
+    'iot': 'Iota (IOT)',
+    'ltc': 'Litecoin (LTC)',
+    'neo': 'Neon (NEO)',
+    'omg': 'Omisego (OMG)',
+    'qsh': 'QASH (QSH)',
+    'qtm': 'Qtum (QTM)',
+    'rcn': 'Ripio Credit Network (RCN)',
+    'rlc': 'iExec (RLC)',
+    'san': 'Santiment (SAN)',
+    'spk': 'SpankChain (SPK)',
+    'trx': 'Tron (TRX)',
+    'xlm': 'Stella Lumen (XLM)',
+    'xmr': 'Monero (XMR)',
+    'xrp': 'Ripple (XRP)',
+    'zec': 'Zcash (ZEC)',
+    'ada': 'Cardano (ADA)',
+    'xvg': 'Verge (XVG)',
+    'xem': 'NEM (XEM)',
+    'ven': 'VeChain (VEN)',
+    'bnb': 'Binance (BNB)',
+    'bcn': 'Bytecoin (BCN)',
+    'icx': 'ICON (ICX)',
+    'lsk': 'Lisk (LSK)',
+    'zil': 'Zilliqa (ZIL)',
+    'ont': 'Ontology (ONT)',
+    'ae': 'Aeternity (AE)',
+    'zrx': 'Ox (ZRX)',
+    'dcr': 'Decred (DCR)',
+    'nano': 'Nano (NANO)',
+    'waves': 'Waves (WAVES)',
+    'elf': 'aelf (ELF)',
+    'steem': 'Steem (STEEM)',
+    'mana': 'Decentraland (MANA)',
+    'edo': 'Eidoo (EDO)',
+    'bchsv': 'Bitcoin SV (BCHSV)'
+}
 
 
 class Portfolio(dict):
     """
     A collection of coins in Portfolio
     """
-    def removeit(self, coin):
-        # just use builtin pop()
-        self.pop(coin)
+    def __repr__(self):
+        li = ''
+        for key in self.keys():
+            li = li + altcoin[key] + ',\n'
+        return li
 
-    def volatility(self):
+    def removeit(self, coin):
+        # just use builtin pop() or del maybe
+        self.__delitem__(coin)
+
+    def volatility(self, start=None, finish=None):
         fig = plt.figure(figsize=(15, 9))
         ax = fig.add_axes([0, 0, 1, 1])
         # ax.autoscale_view()
         ax.set_title('Portfolio Volatillity')
         for coin in self.values():
-            df = coin.getCoinData()[0]
-            df['returns'] = df['close'].pct_change(1)
+            df = coin.getCoinData()[0].loc[start:finish]
+            df['returns'] = df['Close'].pct_change(1)
             df['returns'].plot(kind='kde', label=coin.name)
         plt.legend()
         plt.show()
@@ -39,16 +95,17 @@ class Portfolio(dict):
         df_portfolio = {}
         step = CoinData.params['step']
         for key, coin in self.items():
-            sf = coin.get_data(key, step)['close'].loc[start:finish]
+            sf = coin.get_data(key, step)['Close'].loc[start:finish]
             # use resample to make sure we have a complete dataset ##
             DF = pd.DataFrame(sf).resample('6H', loffset='-5H').ffill()[1:].copy()
             df_portfolio[key] = DF
         return df_portfolio
 
     def normed_return(self, start=None, finish=None):
+        """ Returns the 'Normd Returns' for the Closeing price """
         normed = self.portfolioDF(start, finish)
         for df in normed.values():
-            df['Normed Return'] = df['close'] / df.iloc[0]['close']
+            df['Normed Return'] = df['Close'] / df.iloc[0]['Close']
         return normed
 
     def stocks(self, start=None, finish=None):
@@ -67,15 +124,38 @@ class Portfolio(dict):
     def price(self):
         """ List current Portfolio values """
         for coin in self.values():
-            print(f'{coin.name} = ${coin.value}')
+            print('{:22} = ${: 10.4f}'.format(altcoin[coin.name], coin.value))
 
     def position(self):
         """ Latest Buy/Sell condition"""
+        def amount(now, then):
+            result = round(((dataf.loc[now]['Close'] - dataf.loc[then]['Close']) * 100) / dataf.loc[then]['Close'], 3)
+            flag = True if result < 0 else False
+            if flag:
+                sign = ' '
+            else:
+                sign = '+'
+            return (flag, sign, result)
+
         for coin, data in self.items():
-            cross = data.getCoinData()[1]
-            print('{} is on a  "{}"  since   {} UTC'
-                    .format(coin, cross['Transaction'][-1],
-                                 datetime.strftime(cross.index[-1], "%Y/%m/%d %H:%m")))
+            dataf, cross = data.getCoinData()
+            now = dataf.index[-1]
+            day = amount(now, dataf.loc[now - timedelta(1):].index[0])
+            week = amount(now, dataf.loc[now - timedelta(7):].index[0])
+            print('{:27} = ${}{: 10.4f}{} --> "{:4}"  since {} UTC, - 24hrs {}{: 6.2f}{} {}{: 6.2f}{}'
+                  .format(altcoin[coin],
+                          Fore.LIGHTCYAN_EX + '',
+                          data.value,
+                          Fore.BLACK,
+                          cross['Transaction'][-1],
+                          Fore.MAGENTA + datetime.strftime(cross.index[-1], "%Y/%m/%d %H:%M") + Fore.BLACK,
+                          Fore.RED + day[1] if day[0] else Fore.GREEN + day[1],
+                          day[2],
+                          Fore.BLACK + ' %  last week',
+                          Fore.RED + week[1] if week[0] else Fore.GREEN + week[1],
+                          week[2],
+                          Fore.BLACK + ' %'
+                          ))
 
 
 class CoinData:
@@ -93,35 +173,55 @@ class CoinData:
     }
 
     @classmethod
-    def setParams(cls, sma, bma, lma, step):
-        cls.params['sma'] = sma
-        cls.params['bma'] = bma
-        cls.params['lma'] = lma
-        cls.params['step'] = step
+    def setParams(cls, **kwargs):
+        cls.params.update(kwargs)
 
-    def __init__(self, name, get_data=getData, **kwargs):
-        # self.params = dict(CoinData.default_params)
-        # self.params.update(kwargs)
+    @classmethod
+    def __repr__(cls):
+        return 'Moving average parameters - ' + cls.params.__repr__()
+
+    @classmethod
+    def __str__(cls):
+        return 'Portfolio of coins - ' + cls.portfolio.__repr__()
+
+    @classmethod
+    def price(cls):
+        cls.portfolio.price()
+
+    @classmethod
+    def position(cls):
+        cls.portfolio.position()
+
+    def __init__(self, name, get_data, database=None):
         self.name = name
         self.portfolio[self.name] = self
         self.get_data = get_data
-
-    def __str__(self):
-        return self.name.title()
-
-    def __repr__(self):
-        return self.name
+        self.database = database
 
     @property
     def value(self):
-        return self.get_data(self.name, self.params['step'])['close'].iloc[-1]
+        return self.get_data(self.name, self.params['step'], self.database)['Close'].iloc[-1]
 
     def getCoinData(self):
         dataf = self._init_DF(**self.params)
-        return (dataf, self._crossover(dataf))
+        return (dataf, self._crossover(dataf[self.params['bma'] - 1:]))
+
+    def _init_DF(self, sma, bma, lma, step):
+        """
+        Initialize DataFrame
+        """
+        df = self.get_data(self.name, step, self.database)
+        df.drop_duplicates()
+        df = df.groupby('MTS')['Open', 'Close', 'High', 'Low', 'Volume'].mean()
+        df['sewma'] = df['Close'].ewm(span=sma).mean()
+        df['bma'] = df['Close'].rolling(bma).mean()
+        df['lma'] = df['Close'].rolling(lma).mean()
+        # Lop off the the first 'sewma' number of rows to let ewma's to settle
+        # So we don't need to adjust the start time with func. begining()
+        return df
 
     def plot(self, start=None, finish=None, title=None):
-        title = title or self.__str__().capitalize()
+        title = title or altcoin[self.name]
         df, cross = self.getCoinData()
         # start = self._begining(start, df)
         df = df.loc[start:finish]
@@ -129,27 +229,18 @@ class CoinData:
         self._plott(df, cross, **self.params, title=title)
 
     def trendPlot(self, start=None, finish=None):
-        self._trendPlott(*self.trendFollower(start, finish), title=self.__str__())
-
-    def _init_DF(self, sma, bma, lma, step):
-        """
-        Initialize DataFrame
-        """
-        df = self.get_data(self.name, step)
-        df.drop_duplicates()
-        df = df.groupby('MTS')['open', 'close', 'high', 'low', 'volume'].mean()
-        df['sewma'] = df['close'].ewm(span=sma).mean()
-        df['bma'] = df['close'].rolling(bma).mean()
-        df['lma'] = df['close'].rolling(lma).mean()
-        # Lop off the the first 'bma' number of rows to let ewma's to settle
-        # So we don't need to adjust the start time with func. begining()
-        return df.iloc[bma:]
+        self._trendPlott(*self.trendFollower(start, finish), title=self.name)
 
     def _crossover(self, dataset):
         """From DataFrame 'dataset'. Return a DataFrame of all the crossing points
          of the small and medium moving averages"""
         record = []
         Higher = dataset.iloc[0]['sewma'] > dataset.iloc[0]['bma']
+        # initialize record[] ensures record is never empty
+        if Higher:
+            record.append([dataset.index[0], dataset['Close'].iloc[0], 'Buy'])
+        else:
+            record.append([dataset.index[0], dataset['Close'].iloc[0], 'Sell'])
 
         #  Catch Numpy warning
         with warnings.catch_warnings():
@@ -158,15 +249,15 @@ class CoinData:
                 if Higher:
                     # Sell condition
                     if row['sewma'] / row['bma'] < 0.9965:
-                        record.append([date, row['close'], 'Sell'])
+                        record.append([date, row['Close'], 'Sell'])
                         Higher = not Higher
                 else:
                     # Buy condition
                     if row['sewma'] / row['bma'] > 1.0035:
-                        record.append([date, row['close'], 'Buy'])
+                        record.append([date, row['Close'], 'Buy'])
                         Higher = not Higher
 
-        cross = pd.DataFrame(record, columns=('MTS close Transaction').split())
+        cross = pd.DataFrame(record, columns=('MTS Close Transaction').split())
         cross.set_index('MTS', drop=True, inplace=True)
         return cross
 
@@ -179,18 +270,18 @@ class CoinData:
         axes.plot(dataf.index, dataf['sewma'], label='sewma={}'.format(sma), color='blue')
         axes.plot(dataf.index, dataf['bma'], label='bma={}'.format(bma), color='red')
         axes.plot(dataf.index, dataf['lma'], label='lma={}'.format(lma), color='orange', alpha=.5)
-        axes.plot(dataf.index, dataf['close'], label='close', color='green', alpha=.5)
+        axes.plot(dataf.index, dataf['Close'], label='Close', color='green', alpha=.5)
         # axes.plot(dataf.index, dataf['high'], label='high', color='pink', alpha=.5)
 
         # Plot the sewma/bma crossing buy & sell points
-        sold = pd.DataFrame(trend[trend['Transaction'] == 'Sell']['close'])
-        axes.scatter(sold.index, sold['close'], color='r', label='Sell', lw=3)
-        bought = pd.DataFrame(trend[trend['Transaction'] == 'Buy']['close'])
-        axes.scatter(bought.index, bought['close'], color='g', label='Buy', lw=3)
+        sold = pd.DataFrame(trend[trend['Transaction'] == 'Sell']['Close'])
+        axes.scatter(sold.index, sold['Close'], color='r', label='Sell', lw=3)
+        bought = pd.DataFrame(trend[trend['Transaction'] == 'Buy']['Close'])
+        axes.scatter(bought.index, bought['Close'], color='g', label='Buy', lw=3)
 
         axes.set_ylabel('Closing Price')
         axes.set_xlabel('Date')
-        axes.set_title(title + " - freq:'{}'  Last Price: ${:.2f}".format(step, self.value),
+        axes.set_title(title + " - freq:'{}'  Last Price: ${:.4f}".format(step, self.value),
                        fontdict={'fontsize': 25})
         axes.grid(color='b', alpha=0.5, linestyle='--', linewidth=0.5)
         axes.grid(True)
@@ -205,7 +296,7 @@ class CoinData:
         # start = self._begining(start, dataf)
 
         data = pd.DataFrame(dataf.loc[start:finish])
-        data['return'] = data['close'].pct_change(1)
+        data['return'] = data['Close'].pct_change(1)
         data['cumlative'] = (1 + data['return']).cumprod()
 
         trend = pd.DataFrame(cross.loc[start:finish])
@@ -213,7 +304,7 @@ class CoinData:
         trend.insert(3, 'Coins', '')
 
         # Add the first row
-        trend.loc[data.index[0]] = [data['close'].iloc[0], 'Invest', 1, 1 / data['close'].iloc[0]]
+        trend.loc[data.index[0]] = [data['Close'].iloc[0], 'Invest', 1, 1 / data['Close'].iloc[0]]
         trend.sort_index(inplace=True)
         # Update the trend following rows
         count = 0
@@ -229,7 +320,7 @@ class CoinData:
             count += 1
 
         # Add the last row
-        last_close = data['close'].iloc[-1]
+        last_close = data['Close'].iloc[-1]
         if trend['Transaction'].iloc[-1] == 'Buy':
             coins = trend['Coins'].iloc[-1]
 
@@ -256,20 +347,6 @@ class CoinData:
         plt.legend()
         plt.show()
 
-    # def _begining(self, start, dataf):
-    #     """
-    #     NOTE start should be chosen at least a week after the whole
-    #     dataset starts so the ewma's settle down
-    #     """
-    #     begin = dataf.index.min() + timedelta(7)
-    #     # check for start = None
-    #     if start:
-    #         if begin > datetime.strptime(start, '%Y-%m-%d'):
-    #             start = datetime.strftime(begin, "%Y-%m-%d %H:%M:%S")
-    #     else:
-    #         return datetime.strftime(begin, "%Y-%m-%d %H:%M:%S")
-    #     return start
-
     def plotCandles(self, days=30, width=0.2, title=None):
         self.candles(days, width, title, **self.params)
 
@@ -279,8 +356,7 @@ class CoinData:
         start = (dataf.index[-1] - timedelta(days)).strftime('%Y-%m-%d')
         data = dataf.loc[start:].copy().reset_index()
         data['date_ax'] = data['MTS'].apply(lambda date: date2num(date))
-        df_values = [tuple(vals) for vals in data[[
-            'date_ax', 'open', 'high', 'low', 'close']].values]
+        df_values = [tuple(vals) for vals in data[['date_ax', 'Open', 'High', 'Low', 'Close']].values]
         mondays = WeekdayLocator(MONDAY)        # major ticks on the mondays
         alldays = DayLocator()              # minor ticks on the days
         weekFormatter = DateFormatter('%b %d')  # e.g., Jan 12
@@ -294,8 +370,7 @@ class CoinData:
         ax.xaxis.grid(True, 'major')
         ax.grid(True)
         ax.set_facecolor('lightgrey')
-        ax.set_title("{} - freq'{}' - latest price: ${:.4f}".
-                     format(title, step, self.value), fontsize=20)
+        ax.set_title("{} - freq'{}' - latest price: ${:.4f}".format(title, step, self.value), fontsize=20)
         candlestick_ohlc(ax, df_values, width=width, colorup='g', colordown='r')
 
         # plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')

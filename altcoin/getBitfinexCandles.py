@@ -89,7 +89,7 @@ class Return_API_response:
         self.sesh.close()
 
 
-# Collect candle Data from Bitfinex and store it in the Dict. candles
+# CHllect cLndle DVta from Bitfinex and store it in the Dict. candles
 def _getCandlesBFX_2(coins, delta, limit):
     candles = {}
     resp = Return_API_response()
@@ -98,7 +98,7 @@ def _getCandlesBFX_2(coins, delta, limit):
                                  format(delta, coin, limit))
         if data:
             df = pd.DataFrame(data=data, columns=(
-                              'MTS open close high low volume').split())
+                              'MTS Open Close High Low Volume').split())
             df.set_index('MTS', drop=True, inplace=True)
             df.index = pd.to_datetime(df.index, unit='ms')
             df.name = coin[:3]
@@ -132,18 +132,16 @@ def _update(coins, interval, sort=False):
             masterPath = 'Data\\MasterData\\{}'.format(path)
             backupPath = 'Data\\Master_old\\{}'.format(path)
             old = getData(sym[:3], delta)
-            new = pd.read_csv(pkg_resources.resource_filename(
-                              __name__, newDataPath),
+            new = pd.read_csv(pkg_resources.resource_filename(__name__, newDataPath),
                               index_col='MTS',
-                              parse_dates=True)
+                              parse_dates=True
+                              )
             update = pd.concat([old, new]).drop_duplicates()
-            master = update.groupby('MTS')['open', 'close', 'high', 'low',
-                                           'volume'].mean()
+            master = update.groupby('MTS')['Open', 'Close', 'High', 'Low', 'Volume'].mean()
             if sort:
                 master.sort_index()
             old.to_csv(pkg_resources.resource_filename(__name__, backupPath))
-            master.to_csv(pkg_resources.resource_filename(__name__,
-                                                          masterPath))
+            master.to_csv(pkg_resources.resource_filename(__name__, masterPath))
 
 
 # Only need to use this once to bring some new coins from Bitfinex
@@ -155,14 +153,12 @@ def _newCoins(coins=takeAway, interval=intervals, limit=1000):
             newDataPath = 'Data\\{}'.format(path)
             masterPath = 'Data\\MasterData\\{}'.format(path)
             oldPath = 'Data\\Master_old\\{}'.format(path)
-            master = pd.read_csv(pkg_resources.resource_filename(
-                                 __name__, newDataPath),
+            master = pd.read_csv(pkg_resources.resource_filename(__name__, newDataPath),
                                  index_col='MTS',
-                                 parse_dates=True)
-            master.to_csv(pkg_resources.resource_filename(__name__,
-                                                          masterPath))
-            master.to_csv(pkg_resources.resource_filename(__name__,
-                                                          oldPath))
+                                 parse_dates=True
+                                 )
+            master.to_csv(pkg_resources.resource_filename(__name__, masterPath))
+            master.to_csv(pkg_resources.resource_filename(__name__, oldPath))
 
 
 # Update coin MasterData
@@ -184,7 +180,7 @@ def getOneBITFINEX(sym, step):
 
 def updateAll(coins=all_coins):
     for delta in intervals:
-        coin = 'BTCUSD'
+        coin = 'ZECUSD'
         path = 'Data\\MasterData\\{0}\\{1}_Candles_{2}.csv'.format(delta, coin[:3], delta)
         test = pd.read_csv(pkg_resources.resource_filename(__name__, path),
                            index_col='MTS',
