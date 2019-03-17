@@ -128,7 +128,8 @@ class Portfolio(dict):
 
     def position(self):
         """ Latest Buy/Sell condition"""
-        def amount(now, then):
+        def _amount(now, then):
+            nonlocal dataf
             result = round(((dataf.loc[now]['Close'] - dataf.loc[then]['Close']) * 100) / dataf.loc[then]['Close'], 3)
             flag = True if result < 0 else False
             if flag:
@@ -140,8 +141,8 @@ class Portfolio(dict):
         for coin, data in self.items():
             dataf, cross = data.getCoinData()
             now = dataf.index[-1]
-            day = amount(now, dataf.loc[now - timedelta(1):].index[0])
-            week = amount(now, dataf.loc[now - timedelta(7):].index[0])
+            day = _amount(now, dataf.loc[now - timedelta(1):].index[0])
+            week = _amount(now, dataf.loc[now - timedelta(7):].index[0])
             print('{:27} = ${}{: 10.4f}{} --> "{:4}"  since {} UTC, - 24hrs {}{: 6.2f}{} {}{: 6.2f}{}'
                   .format(altcoin[coin],
                           Fore.LIGHTCYAN_EX + '',
@@ -166,9 +167,9 @@ class CoinData:
     """
     portfolio = Portfolio()
     params = {
-        'sma': 10,
-        'bma': 27,
-        'lma': 74,
+        'sma': 20,
+        'bma': 55,
+        'lma': 140,
         'step': '6h'
     }
 
@@ -194,9 +195,9 @@ class CoinData:
 
     def __init__(self, name, get_data, database=None):
         self.name = name
-        self.portfolio[self.name] = self
         self.get_data = get_data
         self.database = database
+        self.portfolio[self.name] = self
 
     @property
     def value(self):
