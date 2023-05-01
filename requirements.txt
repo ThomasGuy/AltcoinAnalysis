@@ -1,4 +1,4 @@
-﻿astroid==2.1.0
+astroid==2.1.0
 backcall==0.1.0
 bleach==3.3.0
 certifi==2018.11.29
@@ -9,7 +9,7 @@ cycler==0.10.0
 decorator==4.3.2
 defusedxml==0.5.0
 entrypoints==0.3
-Flask==1.0.2
+Flask==2.3.2
 idna==2.8
 ipykernel==5.1.0
 ipython==7.16.3
